@@ -1,51 +1,32 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { getProducts } from "../api/products";
 import ProductCard from "../components/ProductCard";
 
 export default function Home() {
   const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const categories = [
     "Tops & Dresses",
-    "Men’s Topwear",
-    "Women’s Ethnic",
+    "Men's Topwear",
+    "Women's Ethnic",
     "Winter Wear",
     "Handbags",
     "Beauty Needs",
   ];
 
-  const products = [
-    {
-      brand: "Ethereal Threads",
-      name: "Ethereal Silk Dress",
-      price: "4999",
-      oldPrice: "7935",
-      image: "/images/p1.png",
-      discount: "37% OFF",
-    },
-    {
-      brand: "Urban Edge",
-      name: "Premium Leather Jacket",
-      price: "8999",
-      oldPrice: null,
-      image: "/images/p2.png",
-    },
-    {
-      brand: "Modern Muse",
-      name: "Contemporary Jumpsuit",
-      price: "3999",
-      oldPrice: "5969",
-      image: "/images/p3.png",
-    },
-    {
-      brand: "Modern Muse",
-      name: "Contemporary Jumpsuit",
-      price: "3999",
-      oldPrice: "5969",
-      image: "/images/p4.png",
-    },
-  ];
+  useEffect(() => {
+    getProducts({ limit: 4 })
+      .then((res) => setProducts(res.data.products))
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="bg-[#080904] min-h-screen flex justify-center">
-      <div className= "w-full max-w-sm text-white p-5 pb-24">
+      <div className="w-full max-w-sm text-white p-5 pb-24">
 
         {/* HEADER */}
         <div className="flex justify-between items-center mt-4">
@@ -71,7 +52,6 @@ export default function Home() {
 
         {/* CATEGORIES */}
         <h2 className="mt-6 text-lg font-semibold">Top Categories</h2>
-
         <div className="grid grid-cols-3 gap-3 mt-3">
           {categories.map((cat, i) => (
             <div
@@ -92,23 +72,33 @@ export default function Home() {
         {/* PRODUCTS */}
         <h2 className="mt-6 text-lg font-semibold">Top Selling Products</h2>
 
-        <div className="grid grid-cols-2 gap-4 mt-3">
-          {products.map((p, i) => (
-            <ProductCard
-              key={i}
-              image={p.image}
-              brand={p.brand}
-              name={p.name}
-              price={p.price}
-              oldPrice={p.oldPrice}
-              discount={p.discount}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 gap-4 mt-3">
+            {[1,2,3,4].map((i) => (
+              <div key={i} className="bg-[#1F1F1F] rounded-2xl h-64 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 mt-3">
+            {products.map((p, i) => (
+              <ProductCard
+                key={p.id}
+                productId={p.id}
+                image={p.images?.[0]?.url || `/images/p${(i % 4) + 1}.png`}
+                brand={p.brand}
+                name={p.name}
+                price={p.price}
+                oldPrice={p.oldPrice}
+                discount={p.discount}
+                trending={p.trending}
+              />
+            ))}
+          </div>
+        )}
 
         {/* BRAND */}
         <img src="/images/brandspotlight.png" className="rounded-xl mt-4" />
-        
+
       </div>
     </div>
   );

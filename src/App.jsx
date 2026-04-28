@@ -27,13 +27,13 @@ function App() {
           <Route path="/" element={<SplashScreen />} />
           <Route path="/home" element={<Home />} />
           <Route path="/categories" element={<Categories />} />
-          <Route path="/product" element={<Product />} />
+          <Route path="/product/:id" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/tryandbuy" element={<TryAndBuy />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/myorders" element={<MyOrders />} />
           <Route path="/order/:id" element={<OrderDetails />} />
-          <Route path="/trybuytracking" element={<TryBuyTracking />} />
+          <Route path="/trybuytracking/:orderId" element={<TryBuyTracking />} />
           <Route path="/search" element={<SearchBrowse />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/splash" element={<SplashScreen />} />

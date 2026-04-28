@@ -1,11 +1,34 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../api/auth";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { loginUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Email and password are required");
+      return;
+    }
+    try {
+      setLoading(true);
+      setError("");
+      const res = await login({ email, password });
+      loginUser(res.data.user, res.data.accessToken, res.data.refreshToken);
+      navigate("/home");
+    } catch (err) {
+      setError(err.response?.data?.error || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="bg-[#080904] text-white min-h-screen flex justify-center">
@@ -21,10 +44,15 @@ export default function Login() {
           Sign in to your Account
         </h1>
 
+        {/* ERROR */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl mb-4">
+            {error}
+          </div>
+        )}
+
         {/* FIELDS */}
         <div className="space-y-4">
-
-          {/* EMAIL */}
           <div className="space-y-1">
             <label className="text-xs text-[#6C7278] font-medium">Email</label>
             <input
@@ -36,7 +64,6 @@ export default function Login() {
             />
           </div>
 
-          {/* PASSWORD */}
           <div className="space-y-1">
             <label className="text-xs text-[#6C7278] font-medium">Password</label>
             <div className="relative">
@@ -66,21 +93,20 @@ export default function Login() {
             </div>
           </div>
 
-          {/* FORGOT PASSWORD */}
           <div className="flex justify-end">
             <button className="text-xs text-[#CBF009] font-semibold">
               Forgot Password ?
             </button>
           </div>
-
         </div>
 
         {/* LOGIN BUTTON */}
         <button
-          onClick={() => navigate("/home")}
-          className="w-full bg-[#D5FF00] text-black font-semibold text-base py-4 rounded-xl mt-6"
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full bg-[#D5FF00] text-black font-semibold text-base py-4 rounded-xl mt-6 disabled:opacity-50"
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
 
         {/* OR DIVIDER */}
@@ -92,10 +118,7 @@ export default function Login() {
 
         {/* SOCIAL BUTTONS */}
         <div className="space-y-3">
-
-          {/* GOOGLE */}
           <button className="w-full bg-white/10 border border-white/20 rounded-xl py-3.5 flex items-center justify-center gap-3 text-sm font-semibold">
-            {/* Google icon */}
             <svg width="18" height="18" viewBox="0 0 18 18">
               <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
               <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"/>
@@ -105,9 +128,7 @@ export default function Login() {
             Continue with Google
           </button>
 
-          {/* FACEBOOK */}
           <button className="w-full bg-white/10 border border-white/20 rounded-xl py-3.5 flex items-center justify-center gap-3 text-sm font-semibold">
-            {/* Facebook icon */}
             <svg width="18" height="18" viewBox="0 0 18 18">
               <defs>
                 <linearGradient id="fb" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -120,7 +141,6 @@ export default function Login() {
             </svg>
             Continue with Facebook
           </button>
-
         </div>
 
         {/* SIGN UP */}

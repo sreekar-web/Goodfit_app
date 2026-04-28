@@ -1,24 +1,52 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
 import SectionCard from "../components/SectionCard";
+import { getOrder } from "../api/orders";
 
 const timeline = [
-  { label: "Order Placed",    time: "1:15 PM" },
-  { label: "Preparing",       time: "1:30 PM" },
-  { label: "Out for Delivery", time: "2:10 PM" },
-  { label: "Delivered",       time: "2:45 PM" },
+  { status: "PLACED",           label: "Order Placed" },
+  { status: "PREPARING",        label: "Preparing" },
+  { status: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
+  { status: "DELIVERED",        label: "Delivered" },
 ];
 
 export default function OrderDetails() {
   const navigate = useNavigate();
-  const { state } = useLocation();
-  const order = state?.order;
+  const { id } = useParams();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getOrder(id)
+      .then((res) => setOrder(res.data))
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="bg-[#0A0A0A] min-h-screen flex items-center justify-center">
+        <div className="text-white">Loading order...</div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="bg-[#0A0A0A] min-h-screen flex items-center justify-center">
+        <div className="text-white">Order not found</div>
+      </div>
+    );
+  }
+
+  const completedStatuses = order.timeline?.map((t) => t.status) || [];
 
   return (
     <div className="bg-[#0A0A0A] text-white min-h-screen flex justify-center">
       <div className="w-full max-w-sm pb-32">
 
-        <PageHeader title="Order Details" subtitle={order?.id || "GF202610001"} />
+        <PageHeader title="Order Details" subtitle={order.id} />
 
         <div className="px-4 mt-4 space-y-4">
 
@@ -29,9 +57,14 @@ export default function OrderDetails() {
                 <img src="/icons/checkicon.svg" className="w-7 h-7" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Delivered</h2>
-                <p className="text-[#A3A3A3] text-xs mt-0.5">April 1, 2026 at 2:45 PM</p>
-                {order?.tryAndBuy && (
+                <h2 className="text-xl font-bold text-white">{formatStatus(order.status)}</h2>
+                <p className="text-[#A3A3A3] text-xs mt-0.5">
+                  {new Date(order.updatedAt).toLocaleDateString("en-IN", {
+                    day: "numeric", month: "long", year: "numeric",
+                    hour: "2-digit", minute: "2-digit"
+                  })}
+                </p>
+                {order.tryAndBuy && (
                   <span className="inline-block mt-2 bg-[#C9F001] text-black text-xs font-medium px-3 py-0.5 rounded-full">
                     Try &amp; Buy Enabled
                   </span>
@@ -40,10 +73,10 @@ export default function OrderDetails() {
             </div>
           </div>
 
-          {/* START TRY & BUY BUTTON */}
-          {order?.tryAndBuy && (
+          {/* START TRY & BUY */}
+          {order.tryAndBuy && order.status === "DELIVERED" && (
             <button
-              onClick={() => navigate("/trybuytracking", { state: { order } })}
+              onClick={() => navigate(`/trybuytracking/${order.id}`)}
               className="w-full bg-[#C9F001] text-black font-semibold py-4 rounded-2xl flex items-center justify-between px-5"
             >
               <div className="flex items-center gap-3">
@@ -62,69 +95,71 @@ export default function OrderDetails() {
           {/* ORDER TIMELINE */}
           <SectionCard title="Order Timeline">
             <div className="space-y-0">
-              {timeline.map((step, i) => (
-                <div key={i} className="flex gap-3">
-                  {/* ICON + LINE */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-[#C9F001]/20 border border-[#C9F001]/40 flex items-center justify-center flex-shrink-0">
-                      <img src="/icons/checkicon.svg" className="w-4 h-4" />
+              {timeline.map((step, i) => {
+                const done = completedStatuses.includes(step.status);
+                const timeEntry = order.timeline?.find((t) => t.status === step.status);
+                return (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border ${
+                        done
+                          ? "bg-[#C9F001]/20 border-[#C9F001]/40"
+                          : "bg-white/5 border-white/10"
+                      }`}>
+                        <img src="/icons/checkicon.svg" className={`w-4 h-4 ${!done ? "opacity-20" : ""}`} />
+                      </div>
+                      {i < timeline.length - 1 && (
+                        <div className={`w-px flex-1 my-1 min-h-[24px] ${done ? "bg-[#C9F001]/20" : "bg-white/10"}`} />
+                      )}
                     </div>
-                    {i < timeline.length - 1 && (
-                      <div className="w-px flex-1 bg-[#C9F001]/20 my-1 min-h-[24px]" />
-                    )}
+                    <div className="pb-4">
+                      <p className={`text-sm font-medium ${done ? "text-white" : "text-white/30"}`}>
+                        {step.label}
+                      </p>
+                      {timeEntry && (
+                        <p className="text-[#A3A3A3] text-xs">
+                          {new Date(timeEntry.createdAt).toLocaleTimeString("en-IN", {
+                            hour: "2-digit", minute: "2-digit"
+                          })}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  {/* TEXT */}
-                  <div className="pb-4">
-                    <p className="text-sm font-medium text-white">{step.label}</p>
-                    <p className="text-[#A3A3A3] text-xs">{step.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-
-          {/* DELIVERY PARTNER */}
-          <SectionCard title="Delivery Partner">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gray-600 overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center text-xl">👤</div>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Rahul Sharma</p>
-                  <p className="text-[#A3A3A3] text-xs">+91 98765 43210</p>
-                </div>
-              </div>
-              <button className="w-10 h-10 rounded-full bg-[#C9F001]/10 border border-[#C9F001]/30 flex items-center justify-center text-[#C9F001]">
-                <img src="/icons/call.svg" className="w-4 h-4" />
-              </button>
+                );
+              })}
             </div>
           </SectionCard>
 
           {/* DELIVERY ADDRESS */}
-          <SectionCard title="Delivery Address">
-            <div className="flex gap-3 items-start">
-              <div className="w-8 h-8 rounded-xl bg-[#C9F001]/10 flex items-center justify-center flex-shrink-0 text-sm">
-                <img src="/icons/location.svg" className="w-4 h-4" />
+          {order.address && (
+            <SectionCard title="Delivery Address">
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-xl bg-[#C9F001]/10 flex items-center justify-center flex-shrink-0 text-sm">
+                  <img src="/icons/location.svg" className="w-5 h-5" />
+                </div>
+                <p className="text-[#A3A3A3] text-sm leading-relaxed">
+                  {order.address.line1}{order.address.line2 ? `, ${order.address.line2}` : ""}<br />
+                  {order.address.city}, {order.address.state} - {order.address.pincode}
+                </p>
               </div>
-              <p className="text-[#A3A3A3] text-sm leading-relaxed">
-                Flat 301, Sunshine Apartments<br />Madhapur, Hyderabad - 500081
-              </p>
-            </div>
-          </SectionCard>
+            </SectionCard>
+          )}
 
           {/* ITEMS */}
-          <SectionCard title={`Items (${order?.itemCount || 2})`}>
+          <SectionCard title={`Items (${order.items?.length})`}>
             <div className="space-y-4">
-              {(order?.images || ["/images/p1.png", "/images/p2.png"]).map((img, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <img src={img} className="w-16 h-16 rounded-xl object-cover bg-[#1F1F1F]" />
+              {order.items?.map((item, i) => (
+                <div key={item.id} className="flex items-center gap-3">
+                  <img
+                    src={item.product?.images?.[0]?.url || `/images/p${(i % 4) + 1}.png`}
+                    className="w-16 h-16 rounded-xl object-cover bg-[#1F1F1F]"
+                  />
                   <div className="flex-1">
-                    <p className="text-[#C9F001] text-xs">{i === 0 ? "Ethereal Threads" : "Luxe Leather"}</p>
-                    <p className="text-sm font-medium">{i === 0 ? "Ethereal Silk Dress" : "Designer Handbag"}</p>
-                    <p className="text-[#A3A3A3] text-xs">{i === 0 ? "Size: M • Qty: 1" : "Size: One Size • Qty: 1"}</p>
+                    <p className="text-[#C9F001] text-xs">{item.product?.brand}</p>
+                    <p className="text-sm font-medium">{item.product?.name}</p>
+                    <p className="text-[#A3A3A3] text-xs">Size: {item.size} • Qty: {item.quantity}</p>
                   </div>
-                  <p className="text-sm font-semibold">{i === 0 ? "₹4,999" : "₹5,499"}</p>
+                  <p className="text-sm font-semibold">₹{item.price.toLocaleString("en-IN")}</p>
                 </div>
               ))}
             </div>
@@ -134,9 +169,10 @@ export default function OrderDetails() {
           <SectionCard title="Payment Summary">
             <div className="space-y-2">
               {[
-                { label: "Subtotal",      value: "₹10,498",  color: "text-white" },
-                { label: "Try & Buy Fee", value: "₹99",      color: "text-[#C9F001]" },
-                { label: "Delivery",      value: "FREE",      color: "text-green-400", pill: true },
+                { label: "Subtotal", value: `₹${(order.total - order.tryAndBuyFee + order.discount).toLocaleString("en-IN")}`, color: "text-white" },
+                ...(order.tryAndBuy ? [{ label: "Try & Buy Fee", value: "₹99", color: "text-[#C9F001]" }] : []),
+                ...(order.discount > 0 ? [{ label: "Discount", value: `- ₹${order.discount.toLocaleString("en-IN")}`, color: "text-red-400" }] : []),
+                { label: "Delivery", value: "FREE", color: "text-green-400", pill: true },
               ].map((row, i) => (
                 <div key={i} className="flex justify-between items-center text-sm">
                   <span className="text-[#A3A3A3]">{row.label}</span>
@@ -148,7 +184,7 @@ export default function OrderDetails() {
               ))}
               <div className="border-t border-white/10 pt-2 flex justify-between items-center">
                 <span className="font-semibold">Total Paid</span>
-                <span className="text-[#C9F001] font-bold">₹99</span>
+                <span className="text-[#C9F001] font-bold">₹{order.total.toLocaleString("en-IN")}</span>
               </div>
             </div>
           </SectionCard>
@@ -157,4 +193,16 @@ export default function OrderDetails() {
       </div>
     </div>
   );
+}
+
+function formatStatus(status) {
+  const map = {
+    PLACED: "Order Placed",
+    PREPARING: "Preparing",
+    OUT_FOR_DELIVERY: "Out for Delivery",
+    DELIVERED: "Delivered",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+  };
+  return map[status] || status;
 }

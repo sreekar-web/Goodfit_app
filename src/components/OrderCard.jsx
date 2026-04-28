@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 export default function OrderCard({ order }) {
   const navigate = useNavigate();
   const statusStyles = {
-    Delivered:        { color: "text-[#C9F001]", icon: "/icons/checkicon.svg" },
+    "Order Placed":     { color: "text-[#A3A3A3]",  icon: "/icons/box.svg" },
+    "Preparing":        { color: "text-[#A3A3A3]",  icon: "/icons/box.svg" },
     "Out for Delivery": { color: "text-[#2b7fff]",  icon: "/icons/delivery.svg" },
-    Completed:        { color: "text-[#A3A3A3]",  icon: "/icons/box.svg" },
+    "Delivered":        { color: "text-[#C9F001]",  icon: "/icons/checkicon.svg" },
+    "Completed":        { color: "text-[#A3A3A3]",  icon: "/icons/box.svg" },
+    "Cancelled":        { color: "text-red-400",     icon: "/icons/box.svg" },
   };
-
   const { color, icon } = statusStyles[order.status] || { color: "text-white", icon: "📦" };
 
   return (
