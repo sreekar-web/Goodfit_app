@@ -121,6 +121,19 @@ const updateOrderStatus = async (req, res) => {
       data: { orderId: order.id, status, note },
     });
 
+    // EMIT REAL-TIME UPDATE
+    const io = req.app.get('io');
+    io.to(`user:${order.userId}`).emit('orderStatusUpdate', {
+      orderId: order.id,
+      status,
+      note,
+    });
+    io.to(`order:${order.id}`).emit('orderStatusUpdate', {
+      orderId: order.id,
+      status,
+      note,
+    });
+
     res.json(order);
   } catch (err) {
     res.status(500).json({ error: err.message });
