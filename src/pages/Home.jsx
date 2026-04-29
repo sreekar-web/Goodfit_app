@@ -34,7 +34,6 @@ export default function Home() {
           <img src="/icons/headerlogo.svg" className="w-10 h-10" />
           <Link to="/cart" className="flex flex-col items-center">
             <img src="/icons/carticon.svg" className="w-5 h-5 mb-1" />
-            <span className="text-gray-400">Cart</span>
           </Link>
         </div>
 

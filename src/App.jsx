@@ -13,10 +13,12 @@ import SearchBrowse from "./pages/SearchBrowse";
 import Wishlist from "./pages/Wishlist";
 import SplashScreen from "./pages/SplashScreen";
 import Login from "./pages/Login";
+import Checkout from "./pages/Checkout";
+import SignUp from "./pages/SignUp";
 
 function App() {
   const location = useLocation();
-  const hideNav = ["/cart", "/myorders", "/order", "/trybuytracking", "/search", "/wishlist", "/splash", "/login"].some(
+  const hideNav = ["/cart", "/myorders", "/order", "/trybuytracking", "/search", "/wishlist", "/splash", "/login", "/checkout", "/signup"].some(
     (path) => location.pathname.startsWith(path)
   );
 
@@ -38,6 +40,8 @@ function App() {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/splash" element={<SplashScreen />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
 
         {!hideNav && <BottomNav />}
