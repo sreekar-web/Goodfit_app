@@ -63,6 +63,19 @@ const placeOrder = async (req, res) => {
 
     await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 
+    // EMIT TO ALL ONLINE DRIVERS
+    const io = req.app.get('io')
+    const orderWithUser = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: {
+        items: { include: { product: { include: { images: true } } } },
+        address: true,
+        user: { select: { name: true, phone: true } },
+        tryAndBuySession: true,
+      }
+    })
+    io.to('onlineDrivers').emit('newOrder', orderWithUser)
+
     res.status(201).json(order);
   } catch (err) {
     res.status(500).json({ error: err.message });
