@@ -113,7 +113,7 @@ const confirmPickup = async (req, res) => {
 const startTryAndBuy = async (req, res) => {
   const { orderId } = req.params
   try {
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
 
     await prisma.tryAndBuySession.update({
       where: { orderId },
@@ -122,6 +122,19 @@ const startTryAndBuy = async (req, res) => {
         expiresAt,
         isActive: true,
       }
+    })
+
+    // Get order to find userId
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { userId: true }
+    })
+
+    // Emit to customer so their app shows the timer too
+    const io = req.app.get('io')
+    io.to(`user:${order.userId}`).emit('tryAndBuyStarted', {
+      orderId,
+      expiresAt,
     })
 
     res.json({ message: 'Try & Buy session started', expiresAt })
