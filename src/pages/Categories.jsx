@@ -1,17 +1,48 @@
 import Banner from "../components/Banner";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { getProducts } from "../api/products";
+import ProductCard from "../components/ProductCard";
 
 export default function Categories() {
-  const [activeTab, setActiveTab] = useState("All");
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') || 'All'
 
-  const products = [
-    { image: "/images/p1.png" },
-    { image: "/images/p2.png" },
-    { image: "/images/p3.png" },
-    { image: "/images/p4.png" },
-  ];
+  const [activeTab, setActiveTab] = useState(initialTab)
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const query = {}
+    if (activeTab === 'Men') query.category = "Men's Topwear"
+    if (activeTab === 'Women') query.category = "Women's Ethnic"
+    if (activeTab === 'Kids') query.category = 'Kids'
+
+    getProducts(query)
+      .then(res => {
+        if (!cancelled) {
+          setProducts(res.data.products || res.data)
+          setLoading(false)
+        }
+      })
+      .catch(err => {
+        console.error(err)
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [activeTab])
+
+  const tabs = ['All', 'Men', 'Women', 'Kids']
+
+  const chips = {
+    All: ['Trending', 'New Arrivals', 'Sale', 'Try & Buy'],
+    Men: ['Topwear', 'Bottomwear', 'Ethnic', 'Accessories'],
+    Women: ['Dresses', 'Ethnic', 'Tops', 'Handbags'],
+    Kids: ['Boys', 'Girls', 'Infants'],
+  }
 
   return (
     <div className="bg-[#080904] text-white min-h-screen flex justify-center">
@@ -36,82 +67,86 @@ export default function Categories() {
           <span className="text-[#A3A3A3] text-sm">Search for anything..</span>
         </div>
 
-        {/* 🔽 PUT EVERYTHING BELOW THIS */}
         <div className="mt-4 space-y-4">
+
           {/* TABS */}
           <div className="flex justify-between text-sm border-b border-gray-700 px-2 mt-4">
-
-            {["All", "Men", "Women", "Kids"].map((tab) => (
+            {tabs.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => { setLoading(true); setActiveTab(tab) }}
                 className={`pb-2 transition-all duration-200 
-                  ${
-                    activeTab === tab
-                      ? "text-[#D5FF00] border-b-2 border-[#D5FF00]"
-                      : "text-gray-400 hover:text-[#D5FF00]"
-                  }
-                `}
+                  ${activeTab === tab
+                    ? "text-[#D5FF00] border-b-2 border-[#D5FF00]"
+                    : "text-gray-400 hover:text-[#D5FF00]"
+                  }`}
               >
                 {tab}
               </button>
             ))}
-
           </div>
 
           {/* CATEGORY CHIPS */}
-          <div className="flex gap-1 overflow-x-auto no-scrollbar pb-4">
-
-            {["Soft Girl", "Bold", "Earthy", "Indie Core", "Lehengas"].map((item, i) => (
-              <div key={i} className="flex flex-col items-center min-w-[70px]">
-
-                <div className="w-14 h-14 rounded-full bg-gray-600"></div>
-
-                <span className="text-xs mt-2 text-gray-300">
-                  {item}
-                </span>
-
-              </div>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+            {chips[activeTab]?.map((chip, i) => (
+              <button
+                key={i}
+                className="flex flex-col items-center min-w-[70px] cursor-pointer"
+              >
+                <div className="w-14 h-14 rounded-full bg-gray-600" />
+                <span className="text-xs mt-2 text-gray-300 text-center">{chip}</span>
+              </button>
             ))}
-
           </div>
+
         </div>
 
         {/* BANNER */}
-        <Banner
-          image="/images/catbanner.png"
-          link="/exclusive" />
+        <Banner image="/images/catbanner.png" link="/exclusive" />
 
-        {/* MADE IN INDIA */}
+        {/* PRODUCTS */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">
-            Made in India Picks
+            {activeTab === 'All' ? 'All Products' : `${activeTab}'s Collection`}
           </h2>
-
-          <span className="text-sm text-purple-400">
-            See All
-          </span>
+          <span className="text-sm text-gray-400">{products.length} items</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mt-3">
-          {products.map((p, i) => (
-            <div key={i} className="bg-[#1F1F1F] rounded-xl p-2">
-              <img src={p.image} className="rounded-lg h-40 w-full object-cover" />
-              <p className="text-[#D5FF00] text-xs mt-2">@threadstories</p>
-              <p className="text-sm">Thread Stories</p>
-              <p className="text-xs text-gray-400">Handloom sarees</p>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 gap-4 mt-3">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="bg-[#1F1F1F] rounded-2xl h-64 animate-pulse" />
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12 text-gray-400">
+            <div className="text-4xl mb-4">🛍️</div>
+            <p>No products found</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 mt-3">
+            {products.map((p, i) => (
+              <ProductCard
+                key={p.id}
+                productId={p.id}
+                image={p.images?.[0]?.url || `/images/p${(i % 4) + 1}.png`}
+                brand={p.brand}
+                name={p.name}
+                price={p.price}
+                oldPrice={p.oldPrice}
+                discount={p.discount}
+                trending={p.trending}
+              />
+            ))}
+          </div>
+        )}
 
         {/* OCCASION */}
         <h2 className="mt-6 text-lg font-semibold">Shop by Occasion</h2>
-
         <div className="grid grid-cols-2 gap-4 mt-3">
           {["Everyday Outfits", "Reception Night", "Wedding Day", "Date Night"].map((o, i) => (
-            <div key={i} className="relative rounded-xl overflow-hidden">
+            <div key={i} className="relative rounded-xl overflow-hidden cursor-pointer">
               <img src={`/images/o${i + 1}.png`} className="h-44 w-full object-cover" />
-
               <div className="absolute bottom-0 w-full bg-[#D5FF00] text-black text-sm font-semibold text-center py-2">
                 {o}
               </div>
@@ -119,12 +154,9 @@ export default function Categories() {
           ))}
         </div>
 
-        <Banner
-          image="/images/catbanner2.png"
-          link="/exclusive" 
-        />
+        <Banner image="/images/catbanner2.png" link="/exclusive" />
 
       </div>
     </div>
-  );
+  )
 }

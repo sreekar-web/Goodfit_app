@@ -9,12 +9,12 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   const categories = [
-    "Tops & Dresses",
-    "Men's Topwear",
-    "Women's Ethnic",
-    "Winter Wear",
-    "Handbags",
-    "Beauty Needs",
+    { name: "Tops & Dresses", tab: "Women" },
+    { name: "Men's Topwear", tab: "Men" },
+    { name: "Women's Ethnic", tab: "Women" },
+    { name: "Winter Wear", tab: "All" },
+    { name: "Handbags", tab: "All" },
+    { name: "Beauty Needs", tab: "All" },
   ];
 
   useEffect(() => {
@@ -55,10 +55,11 @@ export default function Home() {
           {categories.map((cat, i) => (
             <div
               key={i}
-              className="border border-[#D5FF00] rounded-2xl p-3 flex flex-col items-center justify-center bg-[#0c0c0c]"
+              onClick={() => navigate(`/categories?tab=${cat.tab}&category=${encodeURIComponent(cat.name)}`)}
+              className="border border-[#D5FF00] rounded-2xl p-3 flex flex-col items-center justify-center bg-[#0c0c0c] cursor-pointer active:opacity-70"
             >
               <div className="w-14 h-14 bg-gray-600 rounded-full mb-2" />
-              <p className="text-xs text-center">{cat}</p>
+              <p className="text-xs text-center">{cat.name}</p>
             </div>
           ))}
         </div>
