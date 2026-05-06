@@ -1,19 +1,35 @@
 import { useNavigate } from "react-router-dom";
-import { addToWishlist } from "../api/wishlist";
-import { useState } from "react";
+import { addToWishlist, removeFromWishlist, checkWishlist } from "../api/wishlist";
+import { useState, useEffect } from "react";
 
 export default function ProductCard({ image, brand, name, price, oldPrice, discount, trending, productId }) {
   const navigate = useNavigate();
   const [wishlisted, setWishlisted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!productId) return;
+    checkWishlist(productId)
+      .then(res => setWishlisted(res.data.wishlisted))
+      .catch(() => {});
+  }, [productId]);
 
   const handleWishlist = async (e) => {
     e.stopPropagation();
-    if (!productId) return;
+    if (!productId || loading) return;
+    setLoading(true);
     try {
-      await addToWishlist(productId);
-      setWishlisted(true);
+      if (wishlisted) {
+        await removeFromWishlist(productId);
+        setWishlisted(false);
+      } else {
+        await addToWishlist(productId);
+        setWishlisted(true);
+      }
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,13 +57,13 @@ export default function ProductCard({ image, brand, name, price, oldPrice, disco
         {/* WISHLIST */}
         <button
           onClick={handleWishlist}
-          className="absolute top-2 right-2 w-7 h-7 bg-black/50 rounded-full flex items-center justify-center"
+          disabled={loading}
+          className="absolute top-2 right-2 w-7 h-7 bg-black/50 rounded-full flex items-center justify-center transition-transform active:scale-90"
         >
-          <img
-            src="/icons/heart.svg"
-            className="w-3.5 h-3.5"
-            style={wishlisted ? { filter: "invert(27%) sepia(90%) saturate(700%) hue-rotate(330deg)" } : {}}
-          />
+          {wishlisted
+            ? <span style={{ fontSize: 14, color: '#D5FF00' }}>♥</span>
+            : <img src="/icons/heart.svg" className="w-3.5 h-3.5" />
+          }
         </button>
       </div>
 

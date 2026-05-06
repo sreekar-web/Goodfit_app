@@ -55,7 +55,7 @@ const checkWishlist = async (req, res) => {
     const item = await prisma.wishlist.findUnique({
       where: { userId_productId: { userId: req.user.id, productId: req.params.productId } },
     });
-    res.json({ inWishlist: !!item });
+    res.json({ inWishlist: !!item, inWishlisted: !!item });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -17,8 +17,9 @@ export default function Categories() {
     let cancelled = false
     const query = {}
     if (activeTab === 'Men') query.category = "Men's Topwear"
-    if (activeTab === 'Women') query.category = "Women's Ethnic"
+    if (activeTab === 'Women') query.category = "Tops & Dresses"
     if (activeTab === 'Kids') query.category = 'Kids'
+    query.limit = 20
 
     getProducts(query)
       .then(res => {
@@ -38,10 +39,31 @@ export default function Categories() {
   const tabs = ['All', 'Men', 'Women', 'Kids']
 
   const chips = {
-    All: ['Trending', 'New Arrivals', 'Sale', 'Try & Buy'],
-    Men: ['Topwear', 'Bottomwear', 'Ethnic', 'Accessories'],
-    Women: ['Dresses', 'Ethnic', 'Tops', 'Handbags'],
-    Kids: ['Boys', 'Girls', 'Infants'],
+    All: [
+      { name: 'Tops & Dresses', category: 'Tops & Dresses' },
+      { name: "Men's Topwear", category: "Men's Topwear" },
+      { name: "Women's Ethnic", category: "Women's Ethnic" },
+      { name: 'Handbags', category: 'Handbags' },
+      { name: 'Winter Wear', category: 'Winter Wear' },
+      { name: 'Accessories', category: 'Accessories' },
+      { name: 'Beauty Needs', category: 'Beauty Needs' },
+      { name: 'Footwear', category: 'Footwear' },
+    ],
+    Men: [
+      { name: "Topwear", category: "Men's Topwear" },
+      { name: 'Winter Wear', category: 'Winter Wear' },
+      { name: 'Accessories', category: 'Accessories' },
+      { name: 'Footwear', category: 'Footwear' },
+    ],
+    Women: [
+      { name: 'Tops & Dresses', category: 'Tops & Dresses' },
+      { name: 'Ethnic', category: "Women's Ethnic" },
+      { name: 'Handbags', category: 'Handbags' },
+      { name: 'Beauty Needs', category: 'Beauty Needs' },
+    ],
+    Kids: [
+      { name: 'All Kids', category: 'Kids' },
+    ],
   }
 
   return (
@@ -91,10 +113,17 @@ export default function Categories() {
             {chips[activeTab]?.map((chip, i) => (
               <button
                 key={i}
-                className="flex flex-col items-center min-w-[70px] cursor-pointer"
+                onClick={() => {
+                  setLoading(true)
+                  getProducts({ category: chip.category, limit: 20 })
+                    .then(res => setProducts(res.data.products || res.data))
+                    .catch(err => console.error(err))
+                    .finally(() => setLoading(false))
+                }}
+                className="flex flex-col items-center min-w-[70px] cursor-pointer active:opacity-70"
               >
                 <div className="w-14 h-14 rounded-full bg-gray-600" />
-                <span className="text-xs mt-2 text-gray-300 text-center">{chip}</span>
+                <span className="text-xs mt-2 text-gray-300 text-center">{chip.name}</span>
               </button>
             ))}
           </div>

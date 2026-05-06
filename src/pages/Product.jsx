@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getProduct } from "../api/products";
 import { addToCart } from "../api/cart";
+import { addToWishlist, removeFromWishlist, checkWishlist } from "../api/wishlist";
 
 export default function Product() {
   const navigate = useNavigate();
@@ -11,6 +12,8 @@ export default function Product() {
   const [selectedSize, setSelectedSize] = useState(null);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
+  const [wishlisted, setWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   useEffect(() => {
     getProduct(id)
@@ -24,6 +27,13 @@ export default function Product() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return;
+    checkWishlist(id)
+      .then(res => setWishlisted(res.data.wishlisted))
+      .catch(() => {});
+  }, [id]);
+
   const handleAddToCart = async () => {
     if (!selectedSize) return;
     try {
@@ -35,6 +45,36 @@ export default function Product() {
       console.error(err);
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleWishlist = async () => {
+    setWishlistLoading(true);
+    try {
+      if (wishlisted) {
+        await removeFromWishlist(product.id);
+        setWishlisted(false);
+      } else {
+        await addToWishlist(product.id);
+        setWishlisted(true);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: product.name,
+        text: `Check out ${product.name} by ${product.brand} on GoodFits!`,
+        url: window.location.href,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
     }
   };
 
@@ -76,12 +116,22 @@ export default function Product() {
           </div>
 
           <div className="absolute top-4 right-4 flex gap-3 z-10">
-            <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center">
+            <button
+              onClick={handleShare}
+              className="w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center cursor-pointer"
+            >
               <img src="/icons/shareicon.svg" className="w-4 h-4" />
-            </div>
-            <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center">
-              <img src="/icons/heart.svg" className="w-4 h-4" />
-            </div>
+            </button>
+            <button
+              onClick={handleWishlist}
+              disabled={wishlistLoading}
+              className="w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center cursor-pointer"
+            >
+              {wishlisted
+                ? <span style={{ fontSize: 16, color: '#D5FF00' }}>♥</span>
+                : <img src="/icons/heart.svg" className="w-4 h-4" />
+              }
+            </button>
           </div>
 
           <div className="absolute bottom-[-35px] left-1/2 -translate-x-1/2 flex gap-3 z-10">
@@ -152,7 +202,7 @@ export default function Product() {
           <div className="bg-[#1F1F1F] rounded-xl p-4">
             <p className="font-semibold">Try & Buy Available</p>
             <p className="text-gray-400 text-sm mt-1">
-              Try at home before you pay. 30-min trial window. No questions asked returns.
+              Try at home before you pay. 15-min trial window. No questions asked returns.
             </p>
           </div>
         </div>
